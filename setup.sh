@@ -56,8 +56,28 @@ echo "RSYNC'ing /root/spark-ec2 to other cluster nodes..."
 rsync_start_time="$(date +'%s')"
 for node in $SLAVES $OTHER_MASTERS; do
   echo $node
-  rsync -e "ssh $SSH_OPTS" -az /root/spark-ec2 $node:/root &
-  scp $SSH_OPTS ~/.ssh/id_rsa $node:.ssh &
+
+  MAX_RETRIES=10
+  i=0
+  # Set the initial return value to failure
+  false
+  while [ $? -ne 0 -a $i -lt $MAX_RETRIES ]
+  do
+    sleep 1.
+    i=$(($i+1))
+    rsync -e "ssh $SSH_OPTS" -az /root/spark-ec2 $node:/root
+  done
+
+  MAX_RETRIES=10
+  i=0
+  # Set the initial return value to failure
+  false
+  while [ $? -ne 0 -a $i -lt $MAX_RETRIES ]
+  do
+    sleep 1.
+    i=$(($i+1))
+    scp $SSH_OPTS ~/.ssh/id_rsa $node:.ssh
+  done
   sleep 0.1
 done
 wait
